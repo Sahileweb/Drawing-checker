@@ -1,6 +1,9 @@
 // server.js
 // Minimal proxy so drawing.html (running on its own, e.g. via Live Server)
 // can call the Gemini API without exposing the API key in client-side JS.
+app.get("/", (req, res) => {
+  res.send("Backend is running!");
+});
 
 require("dotenv").config();
 
@@ -14,8 +17,11 @@ app.use(express.json({ limit: "25mb" }));
 app.use(cors({
   origin: [
     "http://127.0.0.1:5500",
-    "http://localhost:5500"
-  ]
+    "http://localhost:5500",
+    "https://drawing-checker.vercel.app"
+  ],
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"]
 }));
 
 const API_KEY = process.env.GEMINI_API_KEY;
