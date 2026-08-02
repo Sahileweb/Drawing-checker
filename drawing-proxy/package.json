@@ -1,0 +1,14 @@
+{
+  "name": "drawing-proxy",
+  "version": "1.0.0",
+  "description": "Minimal proxy for calling the Anthropic API from drawing.html",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^4.19.2"
+  }
+}

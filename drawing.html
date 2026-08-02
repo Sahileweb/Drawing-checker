@@ -1,0 +1,404 @@
+<style>
+  :root{
+    --paper:#F6F3EC;
+    --paper-line: rgba(28,30,27,0.07);
+    --ink:#1C1E1B;
+    --ink-soft:#5B5D57;
+    --red:#B3261E;
+    --red-soft:#E7CFC9;
+    --blue:#2C5F7C;
+    --green:#3D6B45;
+    --border:#C9C3B4;
+  }
+  * { box-sizing: border-box; }
+  .dqa-root{
+    font-family: 'IBM Plex Sans', Arial, sans-serif;
+    background: var(--paper);
+    background-image:
+      linear-gradient(var(--paper-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--paper-line) 1px, transparent 1px);
+    background-size: 24px 24px;
+    color: var(--ink);
+    padding: 18px;
+    border: 1px solid var(--border);
+    position: relative;
+    min-height: 400px;
+  }
+  .dqa-root::before, .dqa-root::after,
+  .dqa-corner-tl, .dqa-corner-br{
+    content:"";
+    position:absolute;
+    width:14px; height:14px;
+    border: 2px solid var(--ink);
+  }
+  .dqa-root::before{ top:6px; left:6px; border-right:none; border-bottom:none; }
+  .dqa-root::after{ bottom:6px; right:6px; border-left:none; border-top:none; }
+
+  .dqa-header{
+    display:flex; align-items:baseline; justify-content:space-between;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 10px; margin-bottom: 16px;
+  }
+  .dqa-title{
+    font-family:'Oswald', Arial, sans-serif;
+    font-weight:600; letter-spacing:0.14em; text-transform:uppercase;
+    font-size:20px;
+  }
+  .dqa-sub{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; color:var(--ink-soft); letter-spacing:0.04em;
+  }
+
+  .dqa-drop{
+    border: 2px dashed var(--border);
+    background: rgba(255,255,255,0.35);
+    padding: 28px; text-align:center; cursor:pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .dqa-drop:hover, .dqa-drop.drag{ border-color: var(--red); background: rgba(255,255,255,0.55); }
+  .dqa-drop-label{ font-family:'Oswald', sans-serif; letter-spacing:0.08em; text-transform:uppercase; font-size:13px; color: var(--ink-soft); }
+  .dqa-drop-sub{ font-family:'IBM Plex Mono', monospace; font-size:11px; color: var(--ink-soft); margin-top:6px; }
+  .dqa-drop input{ display:none; }
+
+  .dqa-filebar{
+    display:flex; align-items:center; justify-content:space-between;
+    font-family:'IBM Plex Mono', monospace; font-size:12px;
+    padding: 8px 0; margin-bottom: 10px; gap: 10px; flex-wrap: wrap;
+  }
+  .dqa-filebar button{
+    font-family:'Oswald', sans-serif; letter-spacing:0.06em; text-transform:uppercase;
+    background:none; border:1px solid var(--ink); color:var(--ink);
+    padding:5px 10px; cursor:pointer; font-size:11px;
+  }
+  .dqa-filebar button:hover{ background:var(--ink); color:var(--paper); }
+
+  .dqa-tabs{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+  .dqa-tab{
+    font-family:'IBM Plex Mono', monospace; font-size:12px;
+    border:1px solid var(--border); background:rgba(255,255,255,0.4);
+    padding:6px 10px; cursor:pointer; display:flex; align-items:center; gap:6px;
+  }
+  .dqa-tab.active{ border-color:var(--ink); background:#fff; }
+  .dqa-dot{ width:7px; height:7px; border-radius:50%; background:var(--ink-soft); flex:none; }
+  .dqa-dot.pending{ background:#C9A24B; animation: pulse 1s infinite ease-in-out; }
+  .dqa-dot.clean{ background:var(--green); }
+  .dqa-dot.flag{ background:var(--red); }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+
+  .dqa-body{ display:grid; grid-template-columns: 1fr 1.3fr; gap: 16px; }
+  @media (max-width: 720px){ .dqa-body{ grid-template-columns: 1fr; } }
+
+  .dqa-preview{ border:1px solid var(--border); background:#fff; padding:6px; }
+  .dqa-preview img{ width:100%; display:block; }
+
+  .dqa-panel{ border:1px solid var(--border); background:rgba(255,255,255,0.5); padding:14px; }
+  .dqa-cat{ margin-bottom: 16px; }
+  .dqa-cat:last-child{ margin-bottom:0; }
+  .dqa-cat-title{
+    font-family:'Oswald', sans-serif; text-transform:uppercase; letter-spacing:0.08em;
+    font-size:12px; color:var(--ink-soft); border-bottom:1px solid var(--border);
+    padding-bottom:4px; margin-bottom:8px; display:flex; justify-content:space-between;
+  }
+  .dqa-issue{
+    font-size:13px; line-height:1.5; padding:6px 0 6px 18px; position:relative;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+  }
+  .dqa-issue::before{
+    content:"✕"; position:absolute; left:0; top:6px; color:var(--red); font-size:12px; font-weight:bold;
+  }
+  .dqa-clean{ font-size:13px; color:var(--green); padding:6px 0 6px 18px; position:relative; }
+  .dqa-clean::before{ content:"✓"; position:absolute; left:0; color:var(--green); font-weight:bold; }
+  .dqa-notes{ font-size:12.5px; color:var(--ink-soft); font-style:italic; margin-top:10px; }
+
+  .dqa-loading{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-soft); padding:20px 0; text-align:center; }
+  .dqa-error{ font-size:12.5px; color:var(--red); }
+
+  .dqa-stamp{
+    position:absolute; right:26px; bottom:26px;
+    border:3px solid var(--red); color:var(--red);
+    font-family:'Oswald', sans-serif; text-transform:uppercase; letter-spacing:0.1em;
+    padding:6px 14px; font-size:13px; font-weight:700;
+    transform: rotate(-8deg); opacity:0.85; pointer-events:none;
+    background: rgba(255,255,255,0.6);
+  }
+  .dqa-footnote{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-soft); margin-top:14px; }
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<div class="dqa-root" id="dqaRoot">
+  <div class="dqa-header">
+    <div class="dqa-title">Drawing QA Check</div>
+    <div class="dqa-sub" id="dqaDate"></div>
+  </div>
+
+  <div id="dqaUploadZone" class="dqa-drop">
+    <div class="dqa-drop-label">Drop a PDF drawing here, or click to select</div>
+    <div class="dqa-drop-sub">Checks title block / BOM completeness + missing dimensions &amp; annotations</div>
+    <input type="file" id="dqaFileInput" accept="application/pdf" />
+  </div>
+
+  <div id="dqaWorkspace" style="display:none;">
+    <div class="dqa-filebar">
+      <span id="dqaFileName"></span>
+      <button id="dqaResetBtn">Load different file</button>
+    </div>
+    <div class="dqa-tabs" id="dqaTabs"></div>
+    <div class="dqa-body">
+      <div class="dqa-preview"><img id="dqaPreviewImg" /></div>
+      <div class="dqa-panel" id="dqaPanel"><div class="dqa-loading">Waiting…</div></div>
+    </div>
+    <div class="dqa-footnote">First-pass assistive check only — a human reviewer should confirm all findings before sign-off. Analysis limited to first 8 sheets.</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  const root = document.getElementById('dqaRoot');
+  const dropZone = document.getElementById('dqaUploadZone');
+  const fileInput = document.getElementById('dqaFileInput');
+  const workspace = document.getElementById('dqaWorkspace');
+  const tabsEl = document.getElementById('dqaTabs');
+  const previewImg = document.getElementById('dqaPreviewImg');
+  const panel = document.getElementById('dqaPanel');
+  const fileNameEl = document.getElementById('dqaFileName');
+  const resetBtn = document.getElementById('dqaResetBtn');
+  const dateEl = document.getElementById('dqaDate');
+
+  dateEl.textContent = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }).toUpperCase();
+
+  const MAX_PAGES = 8;
+  let pages = []; // { image: base64, status: 'pending'|'done'|'error', result: {...} }
+  let activeIndex = 0;
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  ['dragover','dragenter'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('drag'); }));
+  ['dragleave','drop'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('drag'); }));
+  dropZone.addEventListener('drop', e => {
+    const f = e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+  fileInput.addEventListener('change', e => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  });
+  resetBtn.addEventListener('click', () => {
+    pages = []; activeIndex = 0;
+    workspace.style.display = 'none';
+    dropZone.style.display = 'block';
+    fileInput.value = '';
+  });
+
+  async function handleFile(file){
+    if (file.type !== 'application/pdf'){
+      alert('Please upload a PDF file.');
+      return;
+    }
+    fileNameEl.textContent = file.name;
+    dropZone.style.display = 'none';
+    workspace.style.display = 'block';
+    tabsEl.innerHTML = '';
+    panel.innerHTML = '<div class="dqa-loading">Rendering pages…</div>';
+    pages = [];
+
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    const pageCount = Math.min(pdf.numPages, MAX_PAGES);
+
+    for (let i = 1; i <= pageCount; i++){
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 2.0 });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      pages.push({ image: dataUrl, status: 'pending', result: null, error: null });
+    }
+
+    renderTabs();
+    selectTab(0);
+    // kick off analysis sequentially so UI updates progressively
+    for (let i = 0; i < pages.length; i++){
+      analyzePage(i);
+    }
+  }
+
+  function renderTabs(){
+    tabsEl.innerHTML = '';
+    pages.forEach((p, i) => {
+      const tab = document.createElement('div');
+      tab.className = 'dqa-tab' + (i === activeIndex ? ' active' : '');
+      const dot = document.createElement('span');
+      dot.className = 'dqa-dot ' + dotClass(p);
+      tab.appendChild(dot);
+      const label = document.createElement('span');
+      label.textContent = 'SHEET ' + (i+1);
+      tab.appendChild(label);
+      tab.addEventListener('click', () => selectTab(i));
+      tabsEl.appendChild(tab);
+    });
+  }
+
+  function dotClass(p){
+    if (p.status === 'pending') return 'pending';
+    if (p.status === 'error') return 'flag';
+    if (p.status === 'done'){
+      const hasIssues = countIssues(p.result) > 0;
+      return hasIssues ? 'flag' : 'clean';
+    }
+    return '';
+  }
+
+  function countIssues(result){
+    if (!result) return 0;
+    let n = 0;
+    ['title_block','bom','dimensions','annotations'].forEach(k => { if (result[k] && Array.isArray(result[k].issues)) n += result[k].issues.length; });
+    const chains = checkChains(result.dimension_chains);
+    n += chains.filter(c => c.status === 'mismatch').length;
+    return n;
+  }
+
+  function selectTab(i){
+    activeIndex = i;
+    renderTabs();
+    previewImg.src = pages[i].image;
+    renderPanel(pages[i]);
+  }
+
+  function renderPanel(p){
+    if (p.status === 'pending'){
+      panel.innerHTML = '<div class="dqa-loading">Reviewing sheet…</div>';
+      return;
+    }
+    if (p.status === 'error'){
+      panel.innerHTML = '<div class="dqa-error">Could not complete review: ' + escapeHtml(p.error || 'unknown error') + '</div>';
+      return;
+    }
+    const r = p.result;
+    const chains = checkChains(r.dimension_chains);
+    let html = '';
+    html += categoryBlock('Title Block', r.title_block && r.title_block.issues);
+    html += categoryBlock('BOM', r.bom && r.bom.issues);
+    html += categoryBlock('Dimensions', r.dimensions && r.dimensions.issues);
+    html += categoryBlock('Annotations', r.annotations && r.annotations.issues);
+    html += chainBlock(chains);
+    if (r.overall_notes){
+      html += '<div class="dqa-notes">' + escapeHtml(r.overall_notes) + '</div>';
+    }
+    panel.innerHTML = html;
+
+    if (countIssues(r) === 0){
+      const stamp = document.createElement('div');
+      stamp.className = 'dqa-stamp';
+      stamp.textContent = 'No issues found';
+      panel.appendChild(stamp);
+    }
+  }
+
+  function checkChains(chains){
+    return (chains || []).map(ch => {
+      const values = (ch.chain_values || []).map(Number).filter(v => !isNaN(v));
+      const sum = values.reduce((a,b) => a+b, 0);
+      const overall = (ch.overall_value === null || ch.overall_value === undefined) ? null : Number(ch.overall_value);
+      let status = 'na', diff = null, tol = null;
+      if (overall !== null && !isNaN(overall) && values.length > 0){
+        diff = +(sum - overall).toFixed(3);
+        tol = Math.max(1, Math.abs(overall) * 0.005);
+        status = Math.abs(diff) <= tol ? 'match' : 'mismatch';
+      }
+      return { label: ch.label || 'Dimension chain', values, sum, overall, unit: ch.unit || '', status, diff };
+    });
+  }
+
+  function chainBlock(chains){
+    if (!chains || chains.length === 0){
+      return '<div class="dqa-cat"><div class="dqa-cat-title"><span>Dimension Chain Checks</span><span>0</span></div><div class="dqa-clean">No hole/segment chains with an overall dimension found on this sheet</div></div>';
+    }
+    const mismatches = chains.filter(c => c.status === 'mismatch').length;
+    let inner = chains.map(c => {
+      const sumStr = c.values.join(' + ') + ' = ' + roundNice(c.sum) + (c.unit ? ' ' + c.unit : '');
+      if (c.status === 'na'){
+        return '<div class="dqa-clean">' + escapeHtml(c.label) + ': ' + sumStr + ' (no matching overall dimension found to compare)</div>';
+      }
+      if (c.status === 'match'){
+        return '<div class="dqa-clean">' + escapeHtml(c.label) + ': ' + sumStr + ' vs overall ' + roundNice(c.overall) + (c.unit ? ' ' + c.unit : '') + ' — consistent</div>';
+      }
+      return '<div class="dqa-issue">' + escapeHtml(c.label) + ': ' + sumStr + ' vs overall ' + roundNice(c.overall) + (c.unit ? ' ' + c.unit : '') + ' — MISMATCH (Δ ' + roundNice(Math.abs(c.diff)) + (c.unit ? ' ' + c.unit : '') + ')</div>';
+    }).join('');
+    return '<div class="dqa-cat"><div class="dqa-cat-title"><span>Dimension Chain Checks</span><span>' + mismatches + '</span></div>' + inner + '</div>';
+  }
+
+  function roundNice(n){
+    if (n === null || n === undefined || isNaN(n)) return n;
+    return Math.round(n * 1000) / 1000;
+  }
+
+  function categoryBlock(title, issues){
+    issues = issues || [];
+    let inner = '';
+    if (issues.length === 0){
+      inner = '<div class="dqa-clean">Nothing flagged</div>';
+    } else {
+      inner = issues.map(is => '<div class="dqa-issue">' + escapeHtml(is) + '</div>').join('');
+    }
+    return '<div class="dqa-cat"><div class="dqa-cat-title"><span>' + title + '</span><span>' + issues.length + '</span></div>' + inner + '</div>';
+  }
+
+  function escapeHtml(s){
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+  
+  async function analyzePage(i){
+  const p = pages[i];
+  try {
+    const base64 = p.image.split(',')[1];
+    const systemPrompt = "You are a meticulous engineering drawing QA reviewer (mechanical, structural, and fabrication drawings, including fencing/perimeter security posts and panels). Inspect the single drawing sheet image provided. Return ONLY valid JSON, no markdown fences, no preamble, matching exactly this schema: {\"title_block\":{\"issues\":[string,...]},\"bom\":{\"issues\":[string,...]},\"dimensions\":{\"issues\":[string,...]},\"annotations\":{\"issues\":[string,...]},\"dimension_chains\":[{\"label\":string,\"chain_values\":[number,...],\"unit\":string,\"overall_value\":number_or_null}],\"overall_notes\":string}. For title_block/bom/dimensions/annotations: each issue must be short and specific (e.g. 'Revision block REV column is blank', 'Material callout missing for item 3'). Only flag things you can actually see are blank, missing, or inconsistent -- do not guess. If a category has nothing to flag, return an empty array. For dimension_chains: find any place on the sheet where a series of consecutive/stacked dimensions is given (e.g. hole center-to-center spacings running along a post, panel, or member) AND a separate overall/total dimension spans that same run (e.g. total post height, overall length). For each such case, extract the individual segment values in chain_values (in the order they appear), the unit used (mm, m, in, ft), and the overall/total value shown as overall_value. If you cannot clearly read a value, omit that chain entirely rather than guessing a number. If there are no such dimension chains with a matching overall dimension on this sheet, return an empty array for dimension_chains. Do not do the arithmetic yourself -- just extract the raw numbers exactly as shown. This is a first-pass assistive check, not a final QA authority.";
+
+    const response = await fetch("http://localhost:3001/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemPrompt: systemPrompt,
+        imageBase64: base64,
+        mimeType: "image/jpeg",
+        userText: "Review this drawing sheet. Return JSON only."
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.error) {
+      throw new Error(data.error.message || JSON.stringify(data.error));
+    }
+
+    const candidate = data.candidates && data.candidates[0];
+    const textBlock = candidate && candidate.content && candidate.content.parts
+      ? candidate.content.parts.map(part => part.text || '').join('\n').trim()
+      : '';
+
+    if (!textBlock) {
+      throw new Error('Empty response from model');
+    }
+
+    const cleaned = textBlock.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(cleaned);
+
+    p.status = 'done';
+    p.result = parsed;
+  } catch (err){
+    p.status = 'error';
+    p.error = (err && err.message) ? err.message : String(err);
+  }
+  renderTabs();
+  if (activeIndex === i) renderPanel(p);
+  }})();
+</script>
