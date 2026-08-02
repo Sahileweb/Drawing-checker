@@ -1,9 +1,7 @@
 // server.js
 // Minimal proxy so drawing.html (running on its own, e.g. via Live Server)
 // can call the Gemini API without exposing the API key in client-side JS.
-app.get("/", (req, res) => {
-  res.send("Backend is running!");
-});
+
 
 require("dotenv").config();
 
@@ -36,6 +34,10 @@ if (!API_KEY) {
 // Model to use — gemini-2.5-flash is being retired Oct 2026, so default to
 // the current flash model. Override with GEMINI_MODEL env var if needed.
 const MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
+
+app.get("/", (req, res) => {
+  res.send("Backend is running!");
+});
 
 // Body expected from drawing.html:
 // { systemPrompt: string, imageBase64: string, mimeType: string, userText: string }
