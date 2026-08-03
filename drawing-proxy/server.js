@@ -22,7 +22,7 @@ app.use(cors({
   allowedHeaders: ["Content-Type"]
 }));
 
-const API_KEY = process.env.GEMINI_API_KEY.split(",");
+const API_KEY = process.env.GEMINI_API_KEY;
 
 if (!API_KEY) {
   console.error("ERROR: GEMINI_API_KEY environment variable is not set.");
