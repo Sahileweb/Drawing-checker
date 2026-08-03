@@ -1,1 +1,3 @@
 .env
+drawing-proxy/.env
+node_modules/
